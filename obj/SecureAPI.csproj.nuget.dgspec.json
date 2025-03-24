@@ -1,24 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Yonis Abdi\\Desktop\\SecureAPI\\SecureAPI.csproj": {}
+    "C:\\Users\\yonis\\OneDrive\\Skrivbord\\SafeAPI\\SecureAPI.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Yonis Abdi\\Desktop\\SecureAPI\\SecureAPI.csproj": {
+    "C:\\Users\\yonis\\OneDrive\\Skrivbord\\SafeAPI\\SecureAPI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Yonis Abdi\\Desktop\\SecureAPI\\SecureAPI.csproj",
+        "projectUniqueName": "C:\\Users\\yonis\\OneDrive\\Skrivbord\\SafeAPI\\SecureAPI.csproj",
         "projectName": "SecureAPI",
-        "projectPath": "C:\\Users\\Yonis Abdi\\Desktop\\SecureAPI\\SecureAPI.csproj",
-        "packagesPath": "C:\\Users\\Yonis Abdi\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Yonis Abdi\\Desktop\\SecureAPI\\obj\\",
+        "projectPath": "C:\\Users\\yonis\\OneDrive\\Skrivbord\\SafeAPI\\SecureAPI.csproj",
+        "packagesPath": "C:\\Users\\yonis\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\yonis\\OneDrive\\Skrivbord\\SafeAPI\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Yonis Abdi\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\yonis\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -39,6 +35,11 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -65,7 +66,7 @@
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
-              "version": "[9.0.2, )"
+              "version": "[8.0.3, )"
             },
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
@@ -105,7 +106,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.113/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.403/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
