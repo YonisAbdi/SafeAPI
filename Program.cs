@@ -19,20 +19,20 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
             errorNumbersToAdd: null
         )));
 
-// 2. Konfigurera Identity med 2FA-stöd
+// 2. Konfigurera Identity med 2FA-stï¿½d
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = true; // Kräv bekräftat konto
+    options.SignIn.RequireConfirmedAccount = true; // Krï¿½v bekrï¿½ftat konto
     options.Tokens.AuthenticatorTokenProvider = TokenOptions.DefaultAuthenticatorProvider; // Aktivera TOTP
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders()
-.AddTokenProvider<EmailTokenProvider<IdentityUser>>("email"); // För e-postbaserad 2FA
+.AddTokenProvider<EmailTokenProvider<IdentityUser>>("email"); // Fï¿½r e-postbaserad 2FA
 
-// 3. Konfigurera token-leverantörer för 2FA
+// 3. Konfigurera token-leverantï¿½rer fï¿½r 2FA
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
-    options.TokenLifespan = TimeSpan.FromMinutes(15); // Livstid för 2FA-koder
+    options.TokenLifespan = TimeSpan.FromMinutes(15); // Livstid fï¿½r 2FA-koder
 });
 
 // 4. Konfigurera JWT-autentisering
@@ -57,7 +57,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// 5. Lägg till e-posttjänst för 2FA (mockad här, ersätt med riktig implementering)
+// 5. Lï¿½gg till e-posttjï¿½nst fï¿½r 2FA (mockad hï¿½r, ersï¿½tt med riktig implementering)
 builder.Services.AddSingleton<IEmailSender, DummyEmailSender>();
 
 builder.Services.AddAuthorization();
@@ -65,18 +65,31 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Add("X-Frame-Options", "DENY");
+    context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+    context.Response.Headers.Add("Referrer-Policy", "no-referrer");
+    context.Response.Headers.Add("Content-Security-Policy", "default-src 'self'");
+
+    await next();
+});
+
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
 app.Run();
 
-// 6. Temporär e-posttjänst för demoändamål
+// 6. TemporÃ¤r e-posttjÃ¤nst fÃ¶r demo
 public class DummyEmailSender : IEmailSender
 {
     public Task SendEmailAsync(string email, string subject, string htmlMessage)
     {
         Console.WriteLine($"Skickar e-post till: {email}");
-        Console.WriteLine($"Ämne: {subject}");
+        Console.WriteLine($"ï¿½mne: {subject}");
         Console.WriteLine($"Meddelande: {htmlMessage}");
         return Task.CompletedTask;
     }
