@@ -5,37 +5,37 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using SecureAPIApp.Data;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using SecureAPI.Models;
+using IEmailSender = SecureAPI.Models.IEmailSender;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Konfigurera databas med retry-logik
+// 1. Databaskoppling med retry-logik
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
         sqlServerOptions => sqlServerOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(10),
-            errorNumbersToAdd: null
+            errorNumbersToAdd: null // Anger namnet så det kompilerar korrekt
         )));
 
-// 2. Konfigurera Identity med 2FA-stöd
+// 2. Identity med e-postbaserad 2FA
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = true; // Kräv bekräftat konto
-    options.Tokens.AuthenticatorTokenProvider = TokenOptions.DefaultAuthenticatorProvider; // Aktivera TOTP
+    options.SignIn.RequireConfirmedAccount = true;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders()
-.AddTokenProvider<EmailTokenProvider<IdentityUser>>("email"); // För e-postbaserad 2FA
+.AddTokenProvider<EmailTokenProvider<IdentityUser>>(TokenOptions.DefaultEmailProvider); // "Email"
 
-// 3. Konfigurera token-leverantörer för 2FA
+// 3. Giltighetstid för 2FA/e-post-tokens
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
-    options.TokenLifespan = TimeSpan.FromMinutes(15); // Livstid för 2FA-koder
+    options.TokenLifespan = TimeSpan.FromMinutes(10);
 });
 
-// 4. Konfigurera JWT-autentisering
+// 4. JWT-konfiguration
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -43,7 +43,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = false; // Sätt till true i produktion
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -53,24 +53,27 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
     };
 });
 
-// 5. Lägg till e-posttjänst för 2FA (mockad här, ersätt med riktig implementering)
+// 5. E-posttjänst – ersätt med riktig SMTP- eller API-baserad tjänst i produktion
 builder.Services.AddSingleton<IEmailSender, DummyEmailSender>();
 
+// 6. Grundläggande tjänster
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
 var app = builder.Build();
 
+// 7. Middleware pipeline
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
 
-// 6. Temporär e-posttjänst för demoändamål
+// 8. Mockad e-posttjänst (visar bara meddelandet i konsolen)
 public class DummyEmailSender : IEmailSender
 {
     public Task SendEmailAsync(string email, string subject, string htmlMessage)
@@ -78,6 +81,8 @@ public class DummyEmailSender : IEmailSender
         Console.WriteLine($"Skickar e-post till: {email}");
         Console.WriteLine($"Ämne: {subject}");
         Console.WriteLine($"Meddelande: {htmlMessage}");
+
+
         return Task.CompletedTask;
     }
 }
