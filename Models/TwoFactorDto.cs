@@ -1,4 +1,4 @@
-﻿namespace SecureAPI.DTO_modell
+﻿namespace SecureAPI.Models
 {
     public class Confirm2FaEmailModel
     {

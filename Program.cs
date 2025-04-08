@@ -1,41 +1,46 @@
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using SecureAPIApp.Data;
-using SecureAPI.Models;
-using IEmailSender = SecureAPI.Models.IEmailSender;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using System.Security.Claims;
+using SecureAPI.Models;           // AppUser
+using SecureAPI.Services;        // EmailSender
+using SecureAPI.Settings;        // EmailSettings
+using SecureAPIApp.Data;         // ApplicationDbContext
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Databaskoppling med retry-logik
+// 1. Bind EmailSettings from appsettings.json
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
+
+// 2. Add DbContext with retry logic
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        sqlServerOptions => sqlServerOptions.EnableRetryOnFailure(
+        sqlOptions => sqlOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(10),
             errorNumbersToAdd: null
         )));
 
-// 2. Identity med e-postbaserad 2FA
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+// 3. Add Identity + 2FA
+builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders()
-.AddTokenProvider<EmailTokenProvider<IdentityUser>>(TokenOptions.DefaultEmailProvider);
+.AddTokenProvider<EmailTokenProvider<AppUser>>(TokenOptions.DefaultEmailProvider);
 
-// 3. Giltighetstid för e-post-2FA-koder
+// 4. Configure token lifespan for 2FA
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
     options.TokenLifespan = TimeSpan.FromMinutes(10);
 });
 
-// 4. JWT-konfiguration
+// 5. Add JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -54,20 +59,22 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
+        ),
+        NameClaimType = ClaimTypes.NameIdentifier
     };
 });
 
-// 5. E-posttjänst – ersätt DummyEmailSender med riktig implementation vid behov
-builder.Services.AddSingleton<IEmailSender, DummyEmailSender>();
+// 6. Register EmailSender
+builder.Services.AddTransient<IEmailSender, EmailSender>();
 
-// 6. Controllers och auth
+// 7. Add controllers + authorization
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// 7. Säkerhetsheaders (valfritt, bra för produktion)
+// 8. Security headers
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
@@ -78,19 +85,20 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// 9. Routing + Auth
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
-app.Run();
 
-// 8. Mockad e-posttjänst (för utveckling/testing)
-public class DummyEmailSender : IEmailSender
+// 10. Map controller endpoints
+app.UseEndpoints(endpoints =>
 {
-    public Task SendEmailAsync(string email, string subject, string htmlMessage)
+    endpoints.MapControllers();
+
+    foreach (var ep in endpoints.DataSources.SelectMany(ds => ds.Endpoints))
     {
-        Console.WriteLine($"Skickar e-post till: {email}");
-        Console.WriteLine($"Ämne: {subject}");
-        Console.WriteLine($"Meddelande: {htmlMessage}");
-        return Task.CompletedTask;
+        Console.WriteLine($" Mapped endpoint: {ep.DisplayName}");
     }
-}
+});
+
+app.Run();

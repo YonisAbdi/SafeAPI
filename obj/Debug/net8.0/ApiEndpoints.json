@@ -1,6 +1,53 @@
 [
   {
     "ContainingType": "AuthController",
+    "Method": "Confirm2FaEmail",
+    "RelativePath": "api/auth/confirm-2fa-email",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "SecureAPI.Models.Confirm2FaEmailModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "AuthController",
+    "Method": "ConfirmEmail",
+    "RelativePath": "api/auth/confirm-email",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "code",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "AuthController",
+    "Method": "Enable2FaEmail",
+    "RelativePath": "api/auth/enable-2fa-email",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "AuthController",
     "Method": "Login",
     "RelativePath": "api/auth/login",
     "HttpMethod": "POST",
@@ -26,6 +73,22 @@
       {
         "Name": "model",
         "Type": "SecureAPI.Models.RegisterModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "AuthController",
+    "Method": "Verify2Fa",
+    "RelativePath": "api/auth/verify-2fa",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "SecureAPI.Models.Verify2FaModel",
         "IsRequired": true
       }
     ],
