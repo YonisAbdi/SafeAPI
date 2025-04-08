@@ -17,7 +17,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         sqlServerOptions => sqlServerOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(10),
-            errorNumbersToAdd: null // Anger namnet så det kompilerar korrekt
+            errorNumbersToAdd: null
         )));
 
 // 2. Identity med e-postbaserad 2FA
@@ -27,9 +27,9 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders()
-.AddTokenProvider<EmailTokenProvider<IdentityUser>>(TokenOptions.DefaultEmailProvider); // "Email"
+.AddTokenProvider<EmailTokenProvider<IdentityUser>>(TokenOptions.DefaultEmailProvider);
 
-// 3. Giltighetstid för 2FA/e-post-tokens
+// 3. Giltighetstid för e-post-2FA-koder
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
     options.TokenLifespan = TimeSpan.FromMinutes(10);
@@ -43,7 +43,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false; // Sätt till true i produktion
+    options.RequireHttpsMetadata = false;
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -58,22 +58,32 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// 5. E-posttjänst – ersätt med riktig SMTP- eller API-baserad tjänst i produktion
+// 5. E-posttjänst – ersätt DummyEmailSender med riktig implementation vid behov
 builder.Services.AddSingleton<IEmailSender, DummyEmailSender>();
 
-// 6. Grundläggande tjänster
+// 6. Controllers och auth
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// 7. Middleware pipeline
+// 7. Säkerhetsheaders (valfritt, bra för produktion)
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Add("X-Frame-Options", "DENY");
+    context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+    context.Response.Headers.Add("Referrer-Policy", "no-referrer");
+    context.Response.Headers.Add("Content-Security-Policy", "default-src 'self'");
+    await next();
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
 
-// 8. Mockad e-posttjänst (visar bara meddelandet i konsolen)
+// 8. Mockad e-posttjänst (för utveckling/testing)
 public class DummyEmailSender : IEmailSender
 {
     public Task SendEmailAsync(string email, string subject, string htmlMessage)
@@ -81,8 +91,6 @@ public class DummyEmailSender : IEmailSender
         Console.WriteLine($"Skickar e-post till: {email}");
         Console.WriteLine($"Ämne: {subject}");
         Console.WriteLine($"Meddelande: {htmlMessage}");
-
-
         return Task.CompletedTask;
     }
 }
