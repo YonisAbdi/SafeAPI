@@ -1,0 +1,1 @@
+<template><h2>Tack och välkommen!</h2></template>

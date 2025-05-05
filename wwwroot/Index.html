@@ -1,0 +1,108 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SecureAPI Auth</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            padding: 2rem;
+        }
+
+        form {
+            background: #fff;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 6px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        input, button {
+            display: block;
+            margin-top: 10px;
+            padding: 8px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Register</h1>
+    <form id="registerForm">
+        <input type="email" id="regEmail" placeholder="Email" required />
+        <input type="password" id="regPassword" placeholder="Password" required />
+        <button type="submit">Register</button>
+    </form>
+
+    <h1>Login</h1>
+    <form id="loginForm">
+        <input type="email" id="loginEmail" placeholder="Email" required />
+        <input type="password" id="loginPassword" placeholder="Password" required />
+        <button type="submit">Login</button>
+    </form>
+
+    <h1>Verify 2FA</h1>
+    <form id="verify2faForm">
+        <input type="text" id="userId" placeholder="UserId" required />
+        <input type="text" id="code" placeholder="2FA Code" required />
+        <button type="submit">Verify</button>
+    </form>
+
+    <script>
+        const apiBase = "http://localhost:5008/api/auth";
+
+        document.getElementById("registerForm").addEventListener("submit", async e => {
+            e.preventDefault();
+            const res = await fetch(`${apiBase}/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: document.getElementById("regEmail").value,
+                    password: document.getElementById("regPassword").value
+                })
+            });
+            alert(await res.text());
+        });
+
+        document.getElementById("loginForm").addEventListener("submit", async e => {
+            e.preventDefault();
+            const res = await fetch(`${apiBase}/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: document.getElementById("loginEmail").value,
+                    password: document.getElementById("loginPassword").value
+                })
+            });
+            const data = await res.json();
+            if (data.requires2FA) {
+                alert("2FA code sent to your email. Copy User ID below.");
+                document.getElementById("userId").value = data.userId;
+            } else if (data.token) {
+                alert("Login successful! JWT: " + data.token);
+            } else {
+                alert("Login failed");
+            }
+        });
+
+        document.getElementById("verify2faForm").addEventListener("submit", async e => {
+            e.preventDefault();
+            const res = await fetch(`${apiBase}/verify-2fa`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId: document.getElementById("userId").value,
+                    code: document.getElementById("code").value
+                })
+            });
+            const data = await res.json();
+            if (data.token) {
+                alert("2FA successful! JWT: " + data.token);
+            } else {
+                alert("2FA verification failed.");
+            }
+        });
+    </script>
+</body>
+</html>
